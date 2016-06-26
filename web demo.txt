@@ -1,0 +1,32 @@
+
+//~~STARTUP
+// Code to execute when unit starts up
+//~~TIMER
+
+if VOLT_SUPPLY < 4 then sendSMS("08212345","Power Failure!")
+
+if VOLT_BATT < 3.8 then sendSMS("08212345","Battery low!")
+
+if IO1>24 AND RTC_DAY_OF_WEEK = 6 then makeCall("08212345") // Only on Saturdays
+
+// send pulses on IO3 to website
+if (lastupdate>100) then
+begin
+ connectWEB("http://www.cardocket.com/status.php?val="+PULSES_IO3)
+  lastupdate=0
+end
+else lastupdate=lastupdate+1
+
+//~~CALL
+// Code to execute when receiving an incoming call
+//~~SMS
+// Code to execute when receiving an SMS
+//~~MOVEMENT
+// Code to execute when detecting movement.
+// The movement intensity is stored in ACC_DETECT, as well as ACC_X, AXX_Y and AXX_Z
+//~~USSD
+// Code to execute when receiving a reply from a USSD string.
+// Reply is stored in INCOMING_USSD$ string
+//~~GPRS
+// Code to execute when receiving GPRS data.
+// Data is stored in INCOMING_GPRS$ string

@@ -1,0 +1,304 @@
+
+//~~STARTUP
+// Code to execute when unit starts up
+timer_interval =  2000
+probe_count = 0;
+timer_count = 0
+error_count = 100 //search for probes on startup
+current_probe=0
+minutes_to_update = 2
+LAST_MINUTE = RTC_MINUTE
+
+
+
+
+
+
+
+
+
+
+
+
+
+//~~TIMER
+// Code to execute every TIMER_INTERVAL milliseconds
+temp=0 //not calculated yet
+
+// **************************************** Send web updates  **********************************
+// do it here, as problems below will jump out of timer loop
+timer_count = timer_count+5 //every 5 seconds
+
+//update website x minutes
+if (LAST_MINUTE != RTC_MINUTE) 
+{
+  minutes_to_update--
+  LAST_MINUTE = RTC_MINUTE
+
+  if ( minutes_to_update=0)
+  {
+    precision = 0 //default digits after comma
+    webstr$ = "";
+    precision = 1 // one digit after comma for temperature
+    if(probe_count>0)    webstr$ =  ROM1$ + "," + sensor1_temp
+    if(probe_count>1)    webstr$ =  webstr$ + "," + ROM2$ + "," + sensor2_temp
+    if(probe_count>2)    webstr$ =  webstr$ + "," + ROM3$ + "," + sensor3_temp
+    if(probe_count>3)    webstr$ =  webstr$ + "," + ROM4$ + "," + sensor4_temp
+    if(probe_count>4)    webstr$ =  webstr$ + "," + ROM5$ + "," + sensor5_temp
+    if(probe_count>5)    webstr$ =  webstr$ + "," + ROM6$ + "," + sensor6_temp
+    senddata(webstr$)
+
+  //split data - maximum 160 characters in string
+    if(probe_count>6)    
+   {
+     webstr$ =  ROM7$ + "," + sensor7_temp
+     if(probe_count>7)    webstr$ =  webstr$ + "," + ROM8$ + "," + sensor8_temp
+     if(probe_count>8)    webstr$ =  webstr$ + "," + ROM9$ + "," + sensor9_temp
+     if(probe_count>9)    webstr$ =  webstr$ + "," + ROM10$ + "," + sensor10_temp
+     if(probe_count>10)    webstr$ =  webstr$ + "," + ROM11$ + "," + sensor11_temp
+     if(probe_count>11)    webstr$ =  webstr$ + "," + ROM12$ + "," + sensor12_temp
+     senddata(webstr$)
+   }
+    minutes_to_update = 15
+  }
+
+}
+
+// **************************************** Rescan 1-wire network  **********************************
+  ROM1$ = OW_SEARCH_ROM(1)
+  ROM2$ = OW_SEARCH_ROM(0)
+  ROM3$ = OW_SEARCH_ROM(0) 
+  ROM4$ = OW_SEARCH_ROM(0)
+  ROM5$ = OW_SEARCH_ROM(0)
+  ROM6$ = OW_SEARCH_ROM(0)
+  ROM7$ = OW_SEARCH_ROM(0)
+  ROM8$ = OW_SEARCH_ROM(0)
+  ROM9$ = OW_SEARCH_ROM(0)
+  ROM10$ = OW_SEARCH_ROM(0)
+  ROM11$ = OW_SEARCH_ROM(0)
+  ROM12$ = OW_SEARCH_ROM(0)
+
+
+// ***********************************************  Read next Probe  ***********************************************
+ if (OW_RESET() != 1) 
+{
+   debug_str$ = "No reset received"; 
+   probe_count=0
+  return
+}
+
+// ***********************************************  Select ROM of next Probe  ***********************************************
+current_probe++
+if (current_probe = 1)    current_rom$ = ROM1$
+if (current_probe = 2)    current_rom$ = ROM2$
+if (current_probe = 3)    current_rom$ = ROM3$
+if (current_probe = 4)    current_rom$ = ROM4$
+if (current_probe = 5)    current_rom$ = ROM5$
+if (current_probe = 6)    current_rom$ = ROM6$
+if (current_probe = 7)    current_rom$ = ROM7$
+if (current_probe = 8)    current_rom$ = ROM8$
+if (current_probe = 9)    current_rom$ = ROM9$
+if (current_probe = 10)  current_rom$ = ROM10$
+if (current_probe = 11)  current_rom$ = ROM11$
+if (current_probe = 12)  current_rom$ = ROM12$
+
+// ***********************************************  Read next Probe  ***********************************************
+if (current_rom$ = "0000000000000000") 
+{
+  debug_str=""
+  probe_count = current_probe-1
+  if (current_probe=1) error_count=error_count + 5 // no probes
+  current_probe=0
+  return
+}
+
+
+// ***** Select device and send start temperature measurement command *****
+OW_WRITE(0x55)  // Match ROM command
+OW_WRITE(current_rom$) //write current device ROM code
+OW_WRITE(0x44)  // initiate temperature conversion
+
+IO3=2 //strong pullup
+wait(1000); //strong pullup while waiting for conversion
+IO3=1 //normal pullup
+
+ if (OW_RESET() != 1) 
+{
+  debug_str$ = "No reset received";
+  return
+}
+
+OW_WRITE(0x55)  // Match ROM command
+OW_WRITE(current_rom$) //write current device ROM code
+OW_WRITE(190) //0xbe)  // Read scratchpad
+
+// ***********************************************  Calculate temperature  ***********************************************
+//read all 9x data bytes
+temp_LSB        = OW_READ()
+temp_MSB       = OW_READ()
+Th                    = OW_READ()
+Tl                     = OW_READ()
+reserve1         = OW_READ()
+reserve2         = OW_READ()
+count_remain  = OW_READ()
+count_per_C   = OW_READ()
+device_crc     = OW_READ()
+
+// ***** calculate CRC DOW from all received bytes *****
+my_crc = 0
+my_crc = CRCDOW(my_crc,temp_LSB)
+my_crc = CRCDOW(my_crc,temp_MSB)
+my_crc = CRCDOW(my_crc,Th)
+my_crc = CRCDOW(my_crc,Tl)
+my_crc = CRCDOW(my_crc,reserve1)
+my_crc = CRCDOW(my_crc,reserve2)
+my_crc = CRCDOW(my_crc,count_remain)
+my_crc = CRCDOW(my_crc,count_per_C)
+
+temp = temp_LSB+temp_MSB*256;
+ sub = (count_per_C-count_remain)/count_per_C
+
+
+if (temp_MSB > 127)   temp = -((temp ^ 65535) +1)  //negative, calculate from 2's complement
+if (substring(current_rom$,1,2)=28) temp = temp/16  //DS18B20
+else temp = (temp-0.25+sub)/2 //DS18S20 (10)
+
+if (my_crc = device_crc && temp <125 && temp>-55)
+{
+ //save temperatiure to specified probe
+  if (current_probe = 1)  sensor1_temp = temp
+  if (current_probe = 2)  sensor2_temp = temp
+  if (current_probe = 3)  sensor3_temp = temp
+  if (current_probe = 4)  sensor4_temp = temp
+  if (current_probe = 5)  sensor5_temp = temp
+  if (current_probe = 6)  sensor6_temp = temp
+  if (current_probe = 7)  sensor7_temp = temp
+  if (current_probe = 8)  sensor8_temp = temp
+  if (current_probe = 9)  sensor9_temp = temp
+  if (current_probe = 10)  sensor10_temp = temp
+  if (current_probe = 11)  sensor11_temp = temp
+  if (current_probe = 12)  sensor12_temp = temp
+ }
+else 
+{
+  debug_str$ = "Invalid CRC or POR temp, " + current_probe; 
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+//~~CALL
+// Code to execute when receiving an incoming call
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+//~~SMS
+// Code to execute when receiving an SMS
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+//~~MOVEMENT
+// Code to execute when detecting movement.
+// The movement intensity is stored in ACC_DETECT, as well as ACC_X, AXX_Y and AXX_Z
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+//~~USSD
+// Code to execute when receiving a reply from a USSD string.
+// Reply is stored in INCOMING_USSD$ string
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+//~~GPRS
+// Code to execute when receiving GPRS data.
+// Data is stored in INCOMING_GPRS$ string

@@ -1,0 +1,10 @@
+
+//~~STARTUP
+OVERRIDE_LED=1
+LED=0
+TIMER_INTERVAL=1
+//~~TIMER,250
+temp=temp+1
+if temp<100 then LED=1
+else if temp<1000 then led=0
+else temp=0

@@ -1,0 +1,195 @@
+
+//~~STARTUP
+// Code to execute when unit starts up
+
+TIMER_INTERVAL=10
+DIAGNOSTICS_LEVEL=0
+OVERRIDE_LED=1
+ACC_DETECT = 30
+Result$=""
+
+IO1=1
+IO2=1
+IO3=2
+LED=0
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+//~~TIMER
+// Code to execute every TIMER_INTERVAL milliseconds
+// e.g. to execute code every 5 seconds, type: TIMER_INTERVAL=5000
+
+if (DIAGNOSTICS_LEVEL>80) then return
+
+
+if (Result$=="")  LED=LED^1
+else if LED=0 LED=2
+else led=0
+
+if (DIAGNOSTICS_LEVEL=0)
+{
+ PULSES_IO1 = 0
+ PULSES_IO2 = 0
+ PULSES_IO3 = 0
+ Battery_Volts$ = "";
+ GSM_Volts$     = "";
+ USB_Volts$     = "";
+ Supply_Volts$ = ""
+ Result$=""
+ GPS_Working$=""
+ GSM_Working$="";
+ Input1$=""
+ Input2$=""
+ Input3$=""
+IO1=1
+IO2=1
+IO3=2
+}
+ 
+if (DIAGNOSTICS_LEVEL<20)
+ {
+  io2=1
+  io3=2
+  if (LED=1) io1=1
+  else io1=0
+}
+else if (DIAGNOSTICS_LEVEL<40)
+ {
+  io1=1
+  io3=2
+  if (LED=1) io2=1
+  else io2=0
+}
+else if (DIAGNOSTICS_LEVEL<60)
+ {
+  io1=1
+  io2=1
+  if (LED=1) io3=2
+  else io3=0
+}
+
+else if (DIAGNOSTICS_LEVEL=60) 
+{
+
+ if (VOLT_BATT<3.5 OR VOLT_BATT>4.3)  Battery_Volts$="Fail  ("+VOLT_BATT+" V)";
+ else Battery_Volts$="Pass ";
+
+ if (VOLT_GSM<4 OR VOLT_GSM>4.5)        GSM_Volts$="Fail  ("+VOLT_GSM+" V)";
+ else GSM_Volts$="Pass ";
+
+ if (VOLT_USB<4.5 OR VOLT_USB>5.25)    USB_Volts$="Fail  ("+VOLT_USB+" V)";
+ else USB_Volts$="Pass ";
+
+if (VOLT_SUPPLY<5 OR VOLT_SUPPLY>14)    Supply_Volts$="Fail  ("+VOLT_SUPPLY+" V )";
+else Supply_Volts$="Pass ";
+
+
+ if (PULSES_IO1 != 29 && PULSES_IO2 !=29 && PULSES_IO3!=29)  then begin
+   Input1$="FAIL -is the debug cable connected?" 
+   Input2$="FAIL -is the debug cable connected?" 
+   Input3$="FAIL -is the debug cable connected?" 
+end
+else begin
+   if (PULSES_IO1 != 29) Input1$="FAIL" 
+  else Input1$="Pass" 
+   if (PULSES_IO2 != 29) Input2$="FAIL" 
+  else Input2$="Pass" 
+   if (PULSES_IO3 != 29) Input3$="FAIL" 
+  else Input3$="Pass" 
+
+end
+
+  if (GPS_SAT<1) GPS_Working$="Fail - no sattelites detected ";
+ else GPS_Working$="Pass"
+
+  if (GSM_STATUS<1)  GSM_Working$="Failed - did you insert a SIM card?";
+ else GSM_Working$="Pass"
+
+ Result$="Finished testing!"
+}
+ 
+
+
+DIAGNOSTICS_LEVEL++
+
+if (DIAGNOSTICS_LEVEL>75)
+{
+ OVERRIDE_LED=0
+ TIMER_INTERVAL=1000
+IO1=1
+IO2=1
+IO3=2
+}
+
+
+
+
+
+
+
+
+
+//~~CALL
+// Code to execute when receiving an incoming call
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+//~~SMS
+// Code to execute when receiving an SMS
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+//~~MOVEMENT
+// Code to execute when detecting movement.
+// The movement intensity is stored in ACC_DETECT, as well as ACC_X, AXX_Y and AXX_Z
+TIMER_INTERVAL=10
+DIAGNOSTICS_LEVEL=0
+OVERRIDE_LED=1
+ACC_DETECT = 30
+Result$=""
+
+IO1=1
+IO2=1
+IO3=2
+LED=0

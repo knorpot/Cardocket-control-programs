@@ -1,0 +1,46 @@
+
+//~~STARTUP
+
+
+
+difference=0
+timer_interval=500
+startup=1
+
+
+
+//~~TIMER,250
+
+
+
+if (startup)
+{
+seconds = RTC_SECOND
+minutes  = RTC_MINUTE
+hours     = RTC_HOUR
+startup=0
+}
+
+
+seconds++
+LED=LED^1 //toggle LED colour every second
+if (seconds>=60) then
+{
+seconds=0;
+minutes++
+ if (minutes>=60) then
+   {
+    hours++
+    if (hours>23) hours=0
+    minutes=0
+   }
+}
+time$=hours+":"
+if (minutes<10) time$=time$+"0"+minutes
+else time$=time$+minutes
+
+if (seconds<10) time$=time$+":0"+seconds
+else time$=time$+":"+seconds
+
+difference=60*60*(hours-RTC_HOUR)+60*(minutes-RTC_MINUTE)+(seconds-RTC_SECOND)
+

@@ -1,0 +1,18 @@
+
+//~~STARTUP
+
+timer_interval=20
+ignore_crash=20
+
+
+//~~TIMER,250
+
+
+
+if (ignore_crash>0) then ignore_crash=ignore_crash-1
+else if (IO1>16)
+  {
+   crash=crash+1;
+
+   ignore_crash=100
+  }

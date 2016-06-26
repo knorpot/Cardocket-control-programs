@@ -1,0 +1,202 @@
+
+//~~STARTUP
+// Code to execute when unit starts up
+
+
+WEB_UPDATE_INTERVAL=300 //update every 5 minutes
+
+TIMER_INTERVAL=1000 //every second
+override_gsm = 1 //always on
+override_low_power = 1 //do not sleep
+override_gps = 2
+IO1=1 // high impedance state (input) -> count pulses
+IO2=1 // high impedance state (input) -> count pulses
+
+timer_counter=0;
+
+//first time, reset values in flash
+if (flashReadValue(0) != 171)
+{
+ flashWriteValue(0, 171); //by default the value should not be 171
+ flashWriteValue(1, 0); // pos1=pulses1
+ flashWriteValue(2, 0); //po2 = pulses2
+}
+
+PULSES_IO1 = flashReadValue(1);  //every day the value is permanently saved to flash
+PULSES_IO2 = flashReadValue(2);  //every day the value is permanently saved to flash
+last_pulses1 = PULSES_IO1;
+last_pulses2 = PULSES_IO2;
+
+day = RTC_day
+hour=RTC_hour
+
+
+
+
+//~~TIMER
+// Code to execute every second
+//
+// **************************************** Send electricity monitor web updates  **********************************
+timer_counter++
+
+if (timer_counter<WEB_UPDATE_INTERVAL) return
+timer_counter=0
+
+// reset pulses at end of day
+if (day != RTC_day)
+{
+  day=RTC_day;
+  pulses_dayStart1 = PULSES_IO1;
+  pulses_dayStart2 = PULSES_IO2;
+}
+
+// save pulses every hour
+if (hour!=RTC_HOUR)
+{
+  flashWriteValue(1,PULSES_IO1 );
+  flashWriteValue(2,PULSES_IO2);
+
+  hour=RTC_HOUR
+}
+
+ //calculate kw by looking at difference between current and last pulses
+ // update every minute: 1000 pulses / 60 updates per hour  =16.66
+// update every 2 minutes: 1000 pulses / 30 updates per hour =33.33
+ factor=1000/3600*WEB_UPDATE_INTERVAL 
+ diff1 = PULSES_IO1 - last_pulses1;
+ diff2 = PULSES_IO2 - last_pulses2;
+ 
+  kw1=diff1/factor
+  kw2=diff2/factor
+
+ //meter gives 1600 pulses per kwh
+  kwh1=PULSES_IO1/1600
+  kwh2=PULSES_IO2/1600
+  kwh_day1 = (PULSES_IO1-pulses_dayStart1)/1600
+  kwh_day2 = (PULSES_IO2-pulses_dayStart2)/1600
+
+  webstr$ = kw1+ "," + kwh1 + "," + kwh_day1+","+kw2+ "," + kwh2 + "," + kwh_day2 + "," + volt_supply;
+  senddata(webstr$)
+
+ last_pulses1 = PULSES_IO1 
+ last_pulses2 = PULSES_IO2 
+ 
+
+
+
+
+
+//~~CALL
+// Code to execute when receiving an incoming call
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+//~~SMS
+// Code to execute when receiving an SMS
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+//~~MOVEMENT
+// Code to execute when detecting movement.
+// The movement intensity is stored in ACC_DETECT, as well as ACC_X, AXX_Y and AXX_Z
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+//~~USSD
+// Code to execute when receiving a reply from a USSD string.
+// Reply is stored in INCOMING_USSD$ string
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+//~~GPRS
+// Code to execute when receiving GPRS data.
+// Data is stored in INCOMING_GPRS$ string

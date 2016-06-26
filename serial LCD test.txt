@@ -1,0 +1,54 @@
+
+//~~STARTUP
+// Code to execute when unit starts up
+IO6=0
+//wait(1000)
+IO6=1
+TIMER_INTERVAL=10
+
+SERIAL_WRITE(0xfe)
+SERIAL_WRITE(0x58)
+
+SERIAL_WRITE("Hallo daar!!")
+SERIAL_WRITE(0x0d)
+
+
+//~~TIMER
+// Code to execute every TIMER_INTERVAL milliseconds
+// e.g. to execute code every 5 seconds, type: TIMER_INTERVAL=5000
+
+if (red>0xff)
+{
+  if (green>255) blue++
+  else green++
+}
+else red++
+
+if (blue>255)
+{
+red=0;
+green=0
+blue=0
+SERIAL_WRITE(0xfe)
+SERIAL_WRITE(0x58)
+SERIAL_WRITE("Hallo daar!!")
+}
+SERIAL_WRITE(0xfe)
+SERIAL_WRITE(0xd0)
+SERIAL_WRITE(red)
+SERIAL_WRITE(green)
+SERIAL_WRITE(blue)
+
+//~~CALL
+// Code to execute when receiving an incoming call
+//~~SMS
+// Code to execute when receiving an SMS
+//~~MOVEMENT
+// Code to execute when detecting movement.
+// The movement intensity is stored in ACC_DETECT, as well as ACC_X, AXX_Y and AXX_Z
+//~~USSD
+// Code to execute when receiving a reply from a USSD string.
+// Reply is stored in INCOMING_USSD$ string
+//~~GPRS
+// Code to execute when receiving GPRS data.
+// Data is stored in INCOMING_GPRS$ string

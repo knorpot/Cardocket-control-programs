@@ -1,0 +1,30 @@
+
+//~~STARTUP
+// Code to execute when unit starts up
+startupCount=flashReadValue(255)
+if (seconds_since_startup<2) //really a startup
+{
+ startupCount++;
+ flashwritevalue(255,startupCount);
+}
+
+//~~TIMER
+if (seconds_since_startup<20) LED=2
+else 
+{ 
+ override_LED=0
+ OVERRIDE_LOW_POWER=5
+}
+//~~CALL
+// Code to execute when receiving an incoming call
+//~~SMS
+// Code to execute when receiving an SMS
+//~~MOVEMENT
+// Code to execute when detecting movement.
+// The movement intensity is stored in ACC_DETECT, as well as ACC_X, AXX_Y and AXX_Z
+//~~USSD
+// Code to execute when receiving a reply from a USSD string.
+// Reply is stored in INCOMING_USSD$ string
+//~~GPRS
+// Code to execute when receiving GPRS data.
+// Data is stored in INCOMING_GPRS$ string

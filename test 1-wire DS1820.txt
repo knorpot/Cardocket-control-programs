@@ -1,0 +1,108 @@
+
+//~~STARTUP
+// Code to execute when unit starts up
+timer_interval= 500
+first_time=1
+
+
+//~~TIMER
+// Code to execute every TIMER_INTERVAL milliseconds
+// e.g. to execute code every 5 seconds, type: TIMER_INTERVAL=5000
+
+led=1 //green
+temp=0 //not calculated yet
+
+ if (OW_RESET() != 1) then begin
+  led=2 //red
+  wait(250)
+  led=0
+  return
+end
+
+OW_WRITE(0xcc)  // Skip ROM command
+OW_WRITE(0x44)  // initiate temperature conversion
+IO3=2 //strong pullup
+
+wait(750); //strong pullup while waiting for conversion
+IO3=1 //normal pullup
+
+ if (OW_RESET() != 1) then begin
+  led=2 //red
+  wait(250)
+  led=0
+  return
+end
+
+OW_WRITE(0xcc)  // Skip ROM command
+OW_WRITE(0xbe)  // Read scratchpad
+
+//read all 9x data bytes
+temp_LSB        = OW_READ()
+temp_MSB       = OW_READ()
+Th                    = OW_READ()
+Tl                     = OW_READ()
+reserve1         = OW_READ()
+reserve2         = OW_READ()
+count_remain  = OW_READ()
+count_per_C   = OW_READ()
+device_crc     = OW_READ()
+
+//calculate CRC DOW from all received bytes
+my_crc = 0
+my_crc = CRCDOW(my_crc,temp_LSB)
+my_crc = CRCDOW(my_crc,temp_MSB)
+my_crc = CRCDOW(my_crc,Th)
+my_crc = CRCDOW(my_crc,Tl)
+my_crc = CRCDOW(my_crc,reserve1)
+my_crc = CRCDOW(my_crc,reserve2)
+my_crc = CRCDOW(my_crc,count_remain)
+my_crc = CRCDOW(my_crc,count_per_C)
+
+temp = temp_LSB+temp_MSB*256;
+
+if (my_crc=device_crc AND temp!=0xaa) then begin //0xaa = power on reset value, probably an error...
+ sub=(count_per_C-count_remain)/count_per_C
+ temp=(temp-0.25*sub)/2
+last_temp=temp
+if first_time=1 then temp_avg =temp
+else temp_avg = (19*temp_avg+temp)/20
+first_time=0
+end
+
+led=0
+override_led=0
+wait(1000)
+
+//~~CALL
+// Code to execute when receiving an incoming call
+
+
+
+
+
+//~~SMS
+// Code to execute when receiving an SMS
+
+
+
+
+
+//~~MOVEMENT
+// Code to execute when detecting movement.
+// The movement intensity is stored in ACC_DETECT, as well as ACC_X, AXX_Y and AXX_Z
+
+
+
+
+
+//~~USSD
+// Code to execute when receiving a reply from a USSD string.
+// Reply is stored in INCOMING_USSD$ string
+
+
+
+
+
+//~~GPRS
+// Code to execute when receiving GPRS data.
+// Data is stored in INCOMING_GPRS$ string

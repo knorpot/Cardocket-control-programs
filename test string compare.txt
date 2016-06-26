@@ -1,0 +1,18 @@
+
+//~~STARTUP
+
+
+koos$="123"
+jan$="123";
+
+if (koos$="123"=jan$!="3") then led=1
+else led=2
+
+
+
+//~~TIMER,250
+
+
+koos$=koos$+"?"
+if (koos$="123") then led=1
+else led=2

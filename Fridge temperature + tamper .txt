@@ -1,0 +1,155 @@
+
+//~~STARTUP
+// Code to execute when unit starts up
+TIMER_INTERVAL=2000 //twice a second
+update=0;
+LAST_RTC_DAY = 100 //update on startup
+first_time=1 
+
+
+
+
+
+//~~TIMER
+IO1 = 1 //input
+IO2 = 1
+IO6 = 1 // set to 5V
+
+if (IO2 - LAST_IO2 > 2) updateTamper++
+else if (LAST_IO2  - IO2 > 2) updateTamper++
+else updateTamper=0;
+
+if (RTC_DAY != LAST_RTC_DAY) update = 10 //always update once a day
+if (RTC_MINUTE != last_minute)
+{
+ last_minute = RTC_MINUTE
+ updateMinutes++
+}
+
+if (updateTamper > 1 ||  updateMinutes>4)
+{
+  webstr$ = IO1+ "," + IO2 + "," + IO3 + "," + volt_supply+ "," +sensor1_temp;
+  senddata(webstr$)
+
+  LAST_RTC_DAY = RTC_DAY
+  LAST_IO2  =  IO2
+  updateMinutes=0
+  updateTamper=0;
+
+  updateCount++ //for debugging
+}
+
+
+
+// **************************************** sensor 1  **********************************
+
+ if (OW_RESET() != 1) then begin
+debug_str$ = "No reset received";
+  wait(250)
+  return
+end
+
+OW_WRITE(0xcc)  // Skip ROM command
+OW_WRITE(0x44)  // initiate temperature conversion
+IO3=2 //strong pullup
+
+wait(750); //strong pullup while waiting for conversion
+IO3=1 //normal pullup
+
+ if (OW_RESET() != 1) then begin
+ debug_str$ = "No reset received";
+  wait(250)
+  return
+end
+
+OW_WRITE(0xcc)  // Skip ROM command
+OW_WRITE(0xbe)  // Read scratchpad
+
+//read all 9x data bytes
+temp_LSB        = OW_READ()
+temp_MSB       = OW_READ()
+Th                    = OW_READ()
+Tl                     = OW_READ()
+configuration   = OW_READ()
+reserve1         = OW_READ()
+reserve2         = OW_READ()
+reserve3         = OW_READ()
+device_crc     = OW_READ()
+
+//calculate CRC DOW from all received bytes
+my_crc = 0
+my_crc = CRCDOW(my_crc,temp_LSB)
+my_crc = CRCDOW(my_crc,temp_MSB)
+my_crc = CRCDOW(my_crc,Th)
+my_crc = CRCDOW(my_crc,Tl)
+my_crc = CRCDOW(my_crc,configuration)
+my_crc = CRCDOW(my_crc,reserve1)
+my_crc = CRCDOW(my_crc,reserve2)
+my_crc = CRCDOW(my_crc,reserve3)
+
+temp = temp_LSB+temp_MSB*256;
+if (temp>=0x8000) then temp = -((temp ^ 0xffff) +1)  //negative, calculate from 2's complement
+temp = temp /16
+
+if (my_crc=device_crc AND temp!=0xaa) then begin //0xaa = power on reset value, probably an error...
+  if first_time=1 then sensor1_temp = temp
+  else begin
+    //temp cannot change that fast, probably an error
+    if (temp <sensor1_temp+10 and temp >sensor1_temp-10 ) sensor1_temp =  (4*sensor1_temp + temp)/5
+    else if (temp < sensor1_temp) sensor1_temp--;
+    else sensor1_temp++
+  end
+
+  first_time = 0
+end
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+//~~CALL
+// Code to execute when receiving an incoming call
+
+
+
+
+
+
+//~~SMS
+// Code to execute when receiving an SMS
+
+
+
+
+
+
+//~~MOVEMENT
+// Code to execute when detecting movement.
+// The movement intensity is stored in ACC_DETECT, as well as ACC_X, AXX_Y and AXX_Z
+
+
+
+
+
+
+//~~USSD
+// Code to execute when receiving a reply from a USSD string.
+// Reply is stored in INCOMING_USSD$ string
+
+
+
+
+
+
+//~~GPRS
+// Code to execute when receiving GPRS data.
+// Data is stored in INCOMING_GPRS$ string

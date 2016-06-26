@@ -1,0 +1,27 @@
+
+//~~STARTUP
+// Code to execute when unit starts up
+
+
+//~~TIMER
+// Code to execute every TIMER_INTERVAL milliseconds
+// e.g. to execute code every 5 seconds, type: TIMER_INTERVAL=5000
+
+//make LED permanent green when busy with a trip
+if (TRIP_STATUS=1) then begin
+  OVERWRITE_LED=1
+  LED=1 // make LED green
+end
+else begin
+OVERWRITE_LED=0
+end
+
+//~~CALL
+// Code to execute when receiving an incoming call
+
+//~~SMS
+// Code to execute when receiving an SMS
+
+//~~MOVEMENT
+// Code to execute when detecting movement.
+// The movement intensity is stored in ACC_DETECT, as well as ACC_X, AXX_Y and AXX_Z

@@ -1,0 +1,244 @@
+
+//~~STARTUP
+// Code to execute when unit starts up
+
+//cellphone numbers to SMS if door open
+CELL_ALARM_TRIGGERED1$ = "0822110222"   
+CELL_ALARM_TRIGGERED2$ = "" 
+CELL_ALARM_TRIGGERED3$ = "" 
+CELL_ALARM_TRIGGERED4$ = "" 
+CELL_ALARM_TRIGGERED5$ = "" 
+
+WEB_UPDATE_INTERVAL=300 //update every 5 minutes
+
+TIMER_INTERVAL=1000 //every second
+override_gsm = 1 //always on
+override_low_power = 1 //do not sleep
+override_gps = 2
+IO1=1 // high impedance state (input) -> count pulses
+IO2=1 // set low to switch on relay, default off
+IO3=1 //pull-up to 3.3V (input to door switch)
+
+ALARM_STATUS=1 //alarm on by default
+ALARM_SEND_SMS=0 //we havent send an SMS yet
+
+timer_counter=0;
+
+if (stringLength(CELL_ALARM_TRIGGERED1$)>0)  sendSMS(CELL_ALARM_TRIGGERED1$, "Unit startup - Alarm on");
+if (stringLength(CELL_ALARM_TRIGGERED2$)>0)  sendSMS(CELL_ALARM_TRIGGERED2$, "Unit startup - Alarm on");
+if (stringLength(CELL_ALARM_TRIGGERED3$)>0)  sendSMS(CELL_ALARM_TRIGGERED3$, "Unit startup - Alarm on");
+if (stringLength(CELL_ALARM_TRIGGERED4$)>0)  sendSMS(CELL_ALARM_TRIGGERED4$, "Unit startup - Alarm on");
+if (stringLength(CELL_ALARM_TRIGGERED5$)>0)  sendSMS(CELL_ALARM_TRIGGERED5$, "Unit startup - Alarm on");
+
+ last_supply = 5;
+
+//first time, reset values in flash
+if (flashReadValue(0)!=0xab)
+{
+ flashWriteValue(0, 0xab); //by default the value should not be 0xab
+ flashWriteValue(1, 0); // pos1=pulses
+ flashWriteValue(2, 0); //po2 = pulses at day start
+}
+
+PULSES_IO1 = flashReadValue(1);  //every day the value is permanently saved to flash
+pulses_dayStart = flashReadValue(2);
+last_pulses = PULSES_IO1;
+day = RTC_day
+hour=RTC_hour
+
+//~~TIMER
+// Code to execute every second
+// **************************************** send SMS if door open and alarm on  **********************************
+
+if (ALARM_STATUS=1 and IO3=1 and ALARM_SEND_SMS=0)
+{
+  if (stringLength(CELL_ALARM_TRIGGERED1$)>0)  sendSMS(CELL_ALARM_TRIGGERED1$, "Alert: Door open!");
+  if (stringLength(CELL_ALARM_TRIGGERED2$)>0)  sendSMS(CELL_ALARM_TRIGGERED2$, "Alert: Door open!");
+  if (stringLength(CELL_ALARM_TRIGGERED3$)>0)  sendSMS(CELL_ALARM_TRIGGERED3$, "Alert: Door open!");
+  if (stringLength(CELL_ALARM_TRIGGERED4$)>0)  sendSMS(CELL_ALARM_TRIGGERED4$, "Alert: Door open!");
+  if (stringLength(CELL_ALARM_TRIGGERED5$)>0)  sendSMS(CELL_ALARM_TRIGGERED5$, "Alert: Door open!");
+
+  ALARM_SEND_SMS=1 // do not send an SMS again
+}
+
+if (VOLT_SUPPLY<4 and last_supply>6) sendSMS(CELL_ALARM_TRIGGERED1$, "Power failure");
+if (VOLT_SUPPLY>6 and last_supply<4) sendSMS(CELL_ALARM_TRIGGERED1$, "Power restored");
+last_supply = VOLT_SUPPLY
+
+// **************************************** Send electricity monitor web updates  **********************************
+timer_counter++
+
+if (timer_counter<WEB_UPDATE_INTERVAL) return
+timer_counter=0
+
+// reset pulses at end of day
+if (day != RTC_day)
+{
+  day=RTC_day;
+  pulses_dayStart = PULSES_IO1;
+}
+
+// save pulses every hour
+if (hour!=RTC_HOUR)
+{
+  flashWriteValue(1,PULSES_IO1 );
+  flashWriteValue(2,pulses_dayStart);
+
+  hour=RTC_HOUR
+}
+
+ //calculate kw by looking at difference between current and last pulses
+ // update every minute: 1000 pulses / 60 updates per hour  =16.66
+// update every 2 minutes: 1000 pulses / 30 updates per hour =33.33
+  diff = PULSES_IO1 - last_pulses;
+ factor=1000/3600*WEB_UPDATE_INTERVAL
+  kw=diff/factor
+
+ //meter gives 1000 pulses per kwh
+  kwh=PULSES_IO1/1000
+  kwh_day = (PULSES_IO1-pulses_dayStart)/1000
+
+  webstr$ = kw + "," + kwh + "," + kwh_day+","+VOLT_SUPPLY+","+IO3;
+  senddata(webstr$)
+
+ last_pulses = PULSES_IO1 
+ 
+
+
+//~~CALL
+// Code to execute when receiving an incoming call
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+//~~SMS
+// Code to execute when receiving an SMS
+
+//switch alarm on
+if (stringPos(SMS_MESSAGE$ ,"1234 ON")=1)
+{
+  ALARM_STATUS=1 //alarm on 
+  ALARM_SEND_SMS=0 //we havent send an SMS yet
+  IO2=1 //switch geyser off if no one home
+}
+//switch alarm off
+else if (stringPos(SMS_MESSAGE$ ,"1234 OFF")=1)
+{
+  ALARM_STATUS=0 //alarm off
+  IO2=0 //switch geyser on
+}
+
+//return status - also send when swithing alarm on/off
+if (stringPos(SMS_MESSAGE$ ,"1234")=1)
+{
+
+  str$="Alarm: "
+  if (ALARM_STATUS=1) str$=str$+" on"
+  else  str$=str$+" off"
+
+  str$=str$+", Door"
+  if (IO3=0) str$=str$+" closed"
+  else str$=str$+" open"
+
+  sendSMS(SMS_NUMBER$,str$)
+}
+//reply only to known users
+else if (stringPos(SMS_NUMBER$,CELL_ALARM_TRIGGERED1$)=1 OR  stringPos(SMS_NUMBER$,CELL_ALARM_TRIGGERED2$)=1 OR   stringPos(SMS_NUMBER$,CELL_ALARM_TRIGGERED3$)=1 OR  stringPos(SMS_NUMBER$,CELL_ALARM_TRIGGERED4$)=1 OR  stringPos(SMS_NUMBER$,CELL_ALARM_TRIGGERED5$)=1)
+{
+  sendSMS(SMS_NUMBER$,"Unknown command!")
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+//~~MOVEMENT
+// Code to execute when detecting movement.
+// The movement intensity is stored in ACC_DETECT, as well as ACC_X, AXX_Y and AXX_Z
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+//~~USSD
+// Code to execute when receiving a reply from a USSD string.
+// Reply is stored in INCOMING_USSD$ string
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+//~~GPRS
+// Code to execute when receiving GPRS data.
+// Data is stored in INCOMING_GPRS$ string

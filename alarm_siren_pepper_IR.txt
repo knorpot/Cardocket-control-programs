@@ -1,0 +1,146 @@
+
+//~~STARTUP
+// Code to execute when unit starts up
+number_master$ = "0721111111"
+number_2$ = "0721111112"
+number_3$ = "0721111113"
+number_4$ = "0721111114"
+
+alarm_armed = 0
+IO1=1
+IO2=1
+IO3=1
+timer_IO1=0
+timer_IO2=0
+
+
+
+
+//~~TIMER
+// Code to execute every TIMER_INTERVAL milliseconds
+// e.g. to execute code every 5 seconds, type: TIMER_INTERVAL=5000
+
+// **********  Send arm reminder SMS and web update ********** 
+if (RTC_MINUTE != last_minute) 
+{
+  last_minute = RTC_MINUTE
+
+  webstr$ = IO1+ "," + IO2 + "," + IO3 + "," + volt_supply+ "," + volt_batt+ "," + alarm_armed+ "," + timer_IO1+ "," + timer_IO2+ "," + GSM_SIGNAL
+  senddata(webstr$)
+}
+
+
+// **********  Switch IO1 and IO2 ********** 
+if (timer_IO1 > 0)
+{
+ IO1=0
+ timer_IO1--
+}
+else IO1 = 1
+
+if (timer_IO2 > 0)
+{
+ IO2=0
+ timer_IO2--
+}
+else IO2 = 1
+
+
+
+// ********** Monitor IR ********** 
+if (IO3 != last_io3)
+{
+ if (IO3 = 1 && alarm_armed =1) 
+ {
+  sendSMS(number_master$ , "Site Alert!")
+  sendSMS(number_2$ , "Site Alert!")
+  sendSMS(number_3$ , "Site Alert!")
+  sendSMS(number_4$ , "Site Alert!")
+ }
+
+last_io3 = IO3 
+}
+
+
+
+
+
+
+
+//~~CALL
+// Code to execute when receiving an incoming call
+
+
+
+
+//~~SMS
+// Code to execute when receiving an SMS
+
+//  *** First check if the message is from one of the 4 numbers ***
+valid_number = 0
+if (SMS_NUMBER$ = number_master$) valid_number = 1
+if (SMS_NUMBER$ = number_2$) valid_number = 2
+if (SMS_NUMBER$ = number_3$) valid_number = 3
+if (SMS_NUMBER$ = number_4$) valid_number = 4
+if (valid_number = 0) return
+
+// *** Process the message ***
+if (substring(SMS_MESSAGE$,1,11)  = "mooinooiarm") 
+{
+  alarm_armed = 1
+  message$ = SMS_NUMBER$+": Site Armed"
+
+}
+else if (substring(SMS_MESSAGE$,1,14)  = "mooinooidisarm") 
+{
+ alarm_armed = 0
+  message$ = SMS_NUMBER$+": Site Disarmed"
+}
+else if (substring(SMS_MESSAGE$,1,5) = "siren") 
+{ 
+ 
+ timer_IO1 = substring(SMS_MESSAGE$,6,4)
+  message$ = SMS_NUMBER$+": Siren switched on for "+timer_IO1+" seconds"
+}
+else if (substring(SMS_MESSAGE$,1,5) = "spray") 
+{ 
+ timer_IO2 = substring(SMS_MESSAGE$,6,4)
+  message$ = SMS_NUMBER$+": Pepper Gas switched on for "+timer_IO2+"  seconds"
+}
+
+else if (substring(SMS_MESSAGE$,1,6)  = "cancel") 
+{ 
+ timer_IO1=0
+ timer_IO2=0
+
+  message$ = SMS_NUMBER$+": Siren cancelled"
+}
+
+else message$ = SMS_NUMBER$+": unknown command: " + SMS_MESSAGE$
+
+
+if (valid_number != 1) sendSMS(number_master$, message$)
+sendSMS(SMS_NUMBER$, message$)
+last_minute = -1 //force web update
+
+
+
+
+
+//~~MOVEMENT
+// Code to execute when detecting movement.
+// The movement intensity is stored in ACC_DETECT, as well as ACC_X, AXX_Y and AXX_Z
+
+
+
+
+//~~USSD
+// Code to execute when receiving a reply from a USSD string.
+// Reply is stored in INCOMING_USSD$ string
+
+
+
+
+//~~GPRS
+// Code to execute when receiving GPRS data.
+// Data is stored in INCOMING_GPRS$ string

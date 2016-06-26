@@ -1,0 +1,41 @@
+
+//~~STARTUP
+// Code to execute when unit starts up
+
+ connectWEB("http://www.cardocket.com/demo/time.php");
+
+//~~TIMER
+// Code to execute every TIMER_INTERVAL milliseconds
+// e.g. to execute code every 5 seconds, type: TIMER_INTERVAL=5000
+
+
+
+//~~CALL
+// Code to execute when receiving an incoming call
+
+
+//~~SMS
+// Code to execute when receiving an SMS
+
+
+//~~MOVEMENT
+// Code to execute when detecting movement.
+// The movement intensity is stored in ACC_DETECT, as well as ACC_X, AXX_Y and AXX_Z
+
+//~~USSD
+
+//~~GPRS
+if (substring(incoming_gprs$,1,4)=="TIME")
+{
+  //format: TIME: hh:mm:ss
+ RTC_hour     = substring(incoming_gprs$,7,2);
+ RTC_Minute  = substring(incoming_gprs$,10,2);
+ RTC_second  =substring(incoming_gprs$,13,2);
+}
+else if (substring(incoming_gprs$,1,4)=="DATE")
+{
+  //format: DATE: 2012:MM:dd
+ RTC_year     = substring(incoming_gprs$,9,2);
+ RTC_Month  = substring(incoming_gprs$,12,2);
+ RTC_day  =substring(incoming_gprs$,15,2);
+}

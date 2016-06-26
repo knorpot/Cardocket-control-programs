@@ -1,0 +1,31 @@
+
+//~~STARTUP
+// Code to execute when unit starts up
+TIMER_INTERVAL=250
+//~~TIMER
+if (GPS_SPEED>120 AND GPS_FIX=3 AND GPS_HDOP<5) 
+{
+ LED=2 //Red
+ IO1=0
+ IO2=0
+}
+else 
+{
+ LED=1 //green for debugging
+ IO1=1
+ IO2=1
+ OVERRIDE_LED=0
+}
+//~~CALL
+// Code to execute when receiving an incoming call
+//~~SMS
+// Code to execute when receiving an SMS
+//~~MOVEMENT
+// Code to execute when detecting movement.
+// The movement intensity is stored in ACC_DETECT, as well as ACC_X, AXX_Y and AXX_Z
+//~~USSD
+// Code to execute when receiving a reply from a USSD string.
+// Reply is stored in INCOMING_USSD$ string
+//~~GPRS
+// Code to execute when receiving GPRS data.
+// Data is stored in INCOMING_GPRS$ string

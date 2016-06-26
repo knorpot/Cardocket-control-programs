@@ -1,0 +1,40 @@
+
+//~~STARTUP
+// Code to execute when unit starts up
+randomize()
+firsttime=1
+
+//~~TIMER
+// Code to execute every TIMER_INTERVAL milliseconds
+// e.g. to execute code every 5 seconds, type: TIMER_INTERVAL=5000
+if (firsttime) 
+{
+
+firsttime=0
+}
+
+val = random(9);
+string$=string$+val;
+
+
+//~~CALL
+// Code to execute when receiving an incoming call
+
+
+//~~SMS
+// Code to execute when receiving an SMS
+
+
+//~~MOVEMENT
+// Code to execute when detecting movement.
+// The movement intensity is stored in ACC_DETECT, as well as ACC_X, AXX_Y and AXX_Z
+
+
+//~~USSD
+// Code to execute when receiving a reply from a USSD string.
+// Reply is stored in INCOMING_USSD$ string
+
+
+//~~GPRS
+// Code to execute when receiving GPRS data.
+// Data is stored in INCOMING_GPRS$ string

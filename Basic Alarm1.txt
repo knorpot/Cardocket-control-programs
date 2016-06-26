@@ -1,0 +1,111 @@
+
+//~~STARTUP
+// Code to execute when unit starts up
+
+TIMER_INTERVAL=500;  // execute timer every 500 milli seconds / twice per second
+OVERRIDE_LED=1;         // We want full control of the LED'sw
+ALARM_ACTIVATED = 0;  //Alarm off on startup
+
+
+
+
+
+
+
+
+//~~TIMER
+// Code to execute every TIMER_INTERVAL milliseconds
+// e.g. to execute code every 5 seconds, type: TIMER_INTERVAL=5000
+
+//if alarm is activated, flash fast Red
+if (ALARM_ACTIVATED =1) then begin
+   if (LED=0) LED=2
+  else LED=0
+  TIMER_INTERVAL=500
+
+ if (io1>2 AND alarm_triggered_timer=0) then begin
+   alarm_triggered_timer=50; 
+    makeCall("0720000000");
+  end
+ else if (alarm_triggered_timer>0)
+  {
+   alarm_triggered_timer--;
+   if (alarm_triggered_timer=0)  IO2=1 //switch on siren
+   else  IO2=0 //switch of siren
+  }
+end
+
+//if alarm is not activated, flash slowly green
+else begin
+   if (LED=0) LED=1
+  else LED=0
+ TIMER_INTERVAL=2500
+end
+
+
+
+
+
+
+
+//~~CALL
+// Code to execute when receiving an incoming call
+
+// if unit receives a missed call from our number, activate / deactivate alarm
+if (INCOMING_NUMBER$="0830000000") 
+{ 
+ ALARM_ACTIVATED=ALARM_ACTIVATED^1; //quick way to toggle status between 1 and 0 with XOR (^) 
+ alarm_triggered_timer=0;
+ sendSMS(INCOMING_NUMBER$,"Alarm status:"+ALARM_ACTIVATED);
+}
+
+
+
+
+
+
+
+//~~SMS
+// Code to execute when receiving an SMS
+//Activate or deactivate alarm with message ON or OFF
+//Any number can send the sms, but it must start with the password (1234) if not from 0830000000
+
+//  Message from unknown numbers, must contain the password
+if (SMS_MESSAGE$="1234,ON")  
+{
+ALARM_ACTIVATED=1
+alarm_triggered_timer=0;
+sendSMS(SMS_NUMBER$,"Alarm status:"+ALARM_ACTIVATED);
+}
+else if (SMS_MESSAGE$="1234,OFF")  
+{
+ALARM_ACTIVATED=0
+alarm_triggered_timer=0;
+sendSMS(SMS_NUMBER$,"Alarm status:"+ALARM_ACTIVATED);
+}
+// message from known numbers only needs the command ON or OFF
+else if (SMS_NUMBER$="0830000000" OR SMS_NUMBER$="0820000000"  OR SMS_NUMBER$="0830000001" ) then begin
+  if (SMS_MESSAGE$="ON")  
+  {
+   ALARM_ACTIVATED=1
+  alarm_triggered_timer=0;
+}
+  else if (SMS_MESSAGE$="OFF")  
+{
+  ALARM_ACTIVATED=0
+  alarm_triggered_timer=0;
+}
+  sendSMS(SMS_NUMBER$,"Alarm status:"+ALARM_ACTIVATED+"\n Recognisable commands:ON,OFF");
+end
+else sendSMS(SMS_NUMBER$,"Unknown user / password");
+
+
+
+
+
+
+
+
+//~~MOVEMENT
+// Code to execute when detecting movement.
+// The movement intensity is stored in ACC_DETECT, as well as ACC_X, AXX_Y and AXX_Z

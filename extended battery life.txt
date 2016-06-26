@@ -1,0 +1,62 @@
+
+//~~STARTUP
+update_interval= 120 // wake up every every x minutes
+
+TIMER_INTERVAL = 1000
+ ACC_THRESHOLD=1 //do not wake up easily
+
+
+
+
+
+
+
+
+//~~TIMER
+// Code to execute every TIMER_INTERVAL milliseconds
+// e.g. to execute code every 5 seconds, type: TIMER_INTERVAL=5000
+ awake_time =  awake_time + TIMER_INTERVAL/1000
+
+if (SECONDS_SINCE_STARTUP<120) return; //stay awake after startup for 2 minutes
+
+if (awake_time<5)  OVERRIDE_GPS=1 //force GPS on
+else if (GPS_FIX=3 && GPS_HDOP<3) OVERRIDE_GPS=2 //force GPS off once we have a 3D  lock
+
+if (SECONDS_SINCE_GPRS_UPDATE < 30 || awake_time > 180)
+{
+ OVERRIDE_GPS=2 //force GPS off
+ OVERRIDE_LOW_POWER = update_interval*60 //sleep for specified time
+ awake_time=0
+}
+
+
+
+//~~CALL
+// Code to execute when receiving an incoming call
+
+
+
+
+//~~SMS
+// Code to execute when receiving an SMS
+
+
+
+
+//~~MOVEMENT
+// Code to execute when detecting movement.
+// The movement intensity is stored in ACC_DETECT, as well as ACC_X, AXX_Y and AXX_Z
+
+
+
+
+//~~USSD
+// Code to execute when receiving a reply from a USSD string.
+// Reply is stored in INCOMING_USSD$ string
+
+
+
+
+//~~GPRS
+// Code to execute when receiving GPRS data.
+// Data is stored in INCOMING_GPRS$ string

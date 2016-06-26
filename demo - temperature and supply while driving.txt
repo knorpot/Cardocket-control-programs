@@ -1,0 +1,223 @@
+
+//~~STARTUP
+// Code to execute when unit starts up
+timer_interval =  2000
+IO1=1 // high impedance state
+IO3=1 // high impedance state
+
+sensor1_temp = 0
+first_time=1
+timer_count=0
+DISABLE_TIMEOUT=0
+
+
+
+
+
+
+
+
+//~~TIMER
+// Code to execute every TIMER_INTERVAL milliseconds
+
+
+// **************************************** Disable vehicle  **********************************
+if (DISABLE_TIMEOUT>0)
+{
+  IO1=0
+  DISABLE_TIMEOUT = DISABLE_TIMEOUT -2 //every 2 seconds
+}
+else IO1=1
+
+// **************************************** Send web updates  **********************************
+// do it here, as problems below will jump out of timer loop
+timer_count = timer_count+timer_interval/1000  // increment every 5 seconds
+
+//update website every 5 minutes or if door status changed
+if (first_time=0) then begin
+  if (timer_count>300) then begin
+    webstr$ = sensor1_temp + "," + 0 + "," + volt_supply + "," + volt_batt;
+    senddata(webstr$)
+   timer_count=0
+  end
+
+end // end not first time
+
+
+// **************************************** sensor 1  **********************************
+
+ if (OW_RESET() != 1) then begin
+debug_str$ = "No reset received";
+  wait(250)
+  return
+end
+
+OW_WRITE(0xcc)  // Skip ROM command
+OW_WRITE(0x44)  // initiate temperature conversion
+IO3=2 //strong pullup
+
+wait(750); //strong pullup while waiting for conversion
+IO3=1 //normal pullup
+
+ if (OW_RESET() != 1) then begin
+ debug_str$ = "No reset received";
+  wait(250)
+  return
+end
+
+OW_WRITE(0xcc)  // Skip ROM command
+OW_WRITE(0xbe)  // Read scratchpad
+
+//read all 9x data bytes
+temp_LSB        = OW_READ()
+temp_MSB       = OW_READ()
+Th                    = OW_READ()
+Tl                     = OW_READ()
+configuration   = OW_READ()
+reserve1         = OW_READ()
+reserve2         = OW_READ()
+reserve3         = OW_READ()
+device_crc     = OW_READ()
+
+//calculate CRC DOW from all received bytes
+my_crc = 0
+my_crc = CRCDOW(my_crc,temp_LSB)
+my_crc = CRCDOW(my_crc,temp_MSB)
+my_crc = CRCDOW(my_crc,Th)
+my_crc = CRCDOW(my_crc,Tl)
+my_crc = CRCDOW(my_crc,configuration)
+my_crc = CRCDOW(my_crc,reserve1)
+my_crc = CRCDOW(my_crc,reserve2)
+my_crc = CRCDOW(my_crc,reserve3)
+
+temp = temp_LSB+temp_MSB*256;
+if (temp>=0x8000) then temp = -((temp ^ 0xffff) +1)  //negative, calculate from 2's complement
+temp = temp /16
+
+if (my_crc=device_crc AND temp!=0xaa) then begin //0xaa = power on reset value, probably an error...
+  if first_time=1 then sensor1_temp = temp
+  else begin
+    //temp cannot change that fast, probably an error
+    if (temp <sensor1_temp+10 and temp >sensor1_temp-10 ) sensor1_temp =  (4*sensor1_temp + temp)/5
+    else if (temp < sensor1_temp) sensor1_temp--;
+    else sensor1_temp++
+  end
+
+  first_time = 0
+end
+
+
+
+
+
+
+
+
+
+
+//~~CALL
+// Code to execute when receiving an incoming call
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+//~~SMS
+// Code to execute when receiving an SMS
+
+if (stringPos(SMS_MESSAGE$,"STOP CORSA")=1) 
+{
+  DISABLE_TIMEOUT=60*30 //30 minutes
+  sendSMS(SMS_NUMBER$,"Corsa disabled for 30 minutes")
+}
+else if (stringPos(SMS_MESSAGE$,"START CORSA")=1) 
+{
+  DISABLE_TIMEOUT=0
+   sendSMS(SMS_NUMBER$,"Corsa enabled")
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+//~~MOVEMENT
+// Code to execute when detecting movement.
+// The movement intensity is stored in ACC_DETECT, as well as ACC_X, AXX_Y and AXX_Z
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+//~~USSD
+// Code to execute when receiving a reply from a USSD string.
+// Reply is stored in INCOMING_USSD$ string
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+//~~GPRS
+// Code to execute when receiving GPRS data.
+// Data is stored in INCOMING_GPRS$ string

@@ -1,0 +1,90 @@
+
+//~~STARTUP
+// Code to execute when unit starts up
+io1=1  //trip wire between IO1 ad IO3
+io2=1 
+io3=1  //button between IO3 and GND
+timer_interval=10
+
+LAST_RTC_HOUR=-1
+
+alert_sms1$ = ""
+alert_sms2$ = ""
+alert_sms3$ = ""
+alert_sms4$ = ""
+alert_sms5$ = ""
+
+
+
+//~~TIMER
+// Code to execute every TIMER_INTERVAL milliseconds
+// e.g. to execute code every 5 seconds, type: TIMER_INTERVAL=5000
+
+ webstr$ = io1+","+io2+","+io3+","+VOLT_SUPPLY
+  
+// **********************  panic button pressed  **********************
+if (IO3=0) then begin
+  LED=2
+  panic$="Panic Alert!! Position: "+GPS_LAT+","+GPS_LNG+ " Time: "+RTC_HOUR+":";
+  if (RTC_MINUTE<10) panic$=panic$+"0" ;
+  panic$=panic$+RTC_MINUTE;
+
+  if (stringLength(alert_sms1$)>0) sendsms(alert_sms1$, panic$);
+  if (stringLength(alert_sms2$)>0) sendsms(alert_sms2$, panic$);
+  if (stringLength(alert_sms3$)>0) sendsms(alert_sms3$, panic$);
+  if (stringLength(alert_sms4$)>0) sendsms(alert_sms4$, panic$);
+  if (stringLength(alert_sms5$)>0) sendsms(alert_sms5$, panic$);
+
+  wait(5000)
+  senddata(webstr$)
+  override_led=0
+end
+
+// **********************  trip wire broken **********************
+// alert only once an hour
+if (IO1<1 and RTC_HOUR!=LAST_RTC_HOUR) then begin
+  LED=2
+  panic$="Trip wire broken! Position: "+GPS_LAT+","+GPS_LNG+ " Time: "+RTC_HOUR+":";
+  if (RTC_MINUTE<10) panic$=panic$+"0" ;
+  panic$=panic$+RTC_MINUTE;
+
+  if (stringLength(alert_sms1$)>0) sendsms(alert_sms1$, panic$);
+  if (stringLength(alert_sms2$)>0) sendsms(alert_sms2$, panic$);
+  if (stringLength(alert_sms3$)>0) sendsms(alert_sms3$, panic$);
+  if (stringLength(alert_sms4$)>0) sendsms(alert_sms4$, panic$);
+  if (stringLength(alert_sms5$)>0) sendsms(alert_sms5$, panic$);
+
+  LAST_RTC_HOUR=RTC_HOUR
+  senddata(webstr$)
+  override_led=0
+end
+
+// ******************  Update to web site?  ******************
+//give filter enough time to do its job after sleeping
+if (LAST_WEB_UPDATE_HOUR != RTC_HOUR) 
+{
+  senddata(webstr$)
+
+  LAST_WEB_UPDATE_HOUR = RTC_HOUR
+}
+//~~CALL
+// Code to execute when receiving an incoming call
+
+
+//~~SMS
+// Code to execute when receiving an SMS
+
+
+//~~MOVEMENT
+// Code to execute when detecting movement.
+// The movement intensity is stored in ACC_DETECT, as well as ACC_X, AXX_Y and AXX_Z
+
+
+//~~USSD
+// Code to execute when receiving a reply from a USSD string.
+// Reply is stored in INCOMING_USSD$ string
+
+
+//~~GPRS
+// Code to execute when receiving GPRS data.
+// Data is stored in INCOMING_GPRS$ string

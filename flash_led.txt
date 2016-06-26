@@ -1,0 +1,12 @@
+
+//~~STARTUP
+
+OVERRIDE_LED=1
+TIMER_INTERVAL=50
+
+//~~TIMER,250
+
+
+
+if (LED=1) then LED=2
+else LED=1

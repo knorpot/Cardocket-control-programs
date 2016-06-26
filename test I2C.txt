@@ -1,0 +1,157 @@
+
+//~~STARTUP
+// ******  ID of unit ******
+fridge_ID$ = "Zero 000"
+
+// ******  3 numbers to send the alerts to  ******
+sms_alert1$ = ""
+sms_alert2$ = ""
+sms_alert3$ = ""
+
+
+// ******  Limits for temperature probe  ******
+LIMIT_TEMP_MIN   = -15
+LIMIT_TEMP_MAX = 5
+
+
+// ******  other variables  ******
+timer_interval=1000
+override_gps=2 // force GPS off
+override_low_power=1 //do not go to sleep
+override_gsm=1  //GSM always on
+IO3 = 2 //force 3.3V for temp IC supply
+alarm_timer=0 //duration in seconds of alarm
+
+// reset I2c temperature sensor
+ I2C_start()
+ i2c_write(0x80) //send address and write
+ i2c_write(0xfe) //reset
+ I2C_stop()
+
+
+
+
+
+//~~TIMER
+// *********** First read temperature **************************
+success=0 
+I2C_start()
+ success = success +  i2c_write(0x80) //send address and write
+ success = success + i2c_write(0xe3) //measure temperature - no hold master
+ I2C_start()
+ success = success + i2c_write(0x81) //send address and read
+ wait(100) // wait for reading to finish
+
+ //read 2x address + CRC
+ val1 = i2c_read(1)
+ val2 = i2c_read(1)
+ crc  = i2c_read(0)
+ i2c_stop()
+
+//calculate temperature
+if (success=3)
+{ 
+ temperature = val1*256+val2 
+ temperature = -46.85+175.72*temperature/65536
+}
+else errors_temp++;
+
+// *********** Next humidity **************************
+success = 0
+ I2C_start()
+ success = success +  i2c_write(0x80) //send address and write
+ success = success +  i2c_write(0xe5) //measure humidity - hold master
+ I2C_start()
+ success = success + i2c_write(0x81) //send address and read
+ wait(100) // wait for reading to finish
+
+ //read 2x address + CRC
+ val1 = i2c_read(1)
+ val2 = i2c_read(1)
+ crc  = i2c_read(0)
+ i2c_stop()
+
+//calculate relative humidity
+if (success =3)
+{
+ RH=val1*256+val2 
+ RH=-6+125*RH/65536
+}
+else errors_hum++;
+
+tempStr$ = temperature+".C"
+RHStr$    = RH+" % RH"
+
+
+// *********** Do we have an alarm? **************************
+alarmStr$=""
+
+// out of temperature
+if (temperature<LIMIT_TEMP_MIN OR temperature>LIMIT_TEMP_MAX) alarmStr$ = alarmStr$ + " Out of temperature: " + temperature + ".C"
+
+// power failure
+if (VOLT_SUPPLY<6) alarmStr$ = alarmStr$ + " Power failure! "
+
+// open door - to do
+//if (IO3>1) door_open_timer++
+//else door_open_timer=0
+if (door_open_timer>300) alarmStr$ = alarmStr$ + " Door open! "
+
+// ***********  send message to 1 of the 3 numbers *********** 
+if (stringlength(alarmStr$)>0)
+{
+ alarm_timer++
+ message$=fridge_ID$+alarmStr$;
+ if (alarm_timer=10)     sendSMS(sms_alert1$, message$); //first SMS after 10 seconds
+ if (alarm_timer=900)   sendSMS(sms_alert2$, message$); //next SMS after 15 minutes
+ if (alarm_timer=1800) sendSMS(sms_alert3$, message$); //next SMS after 30 minutes
+}
+else alarm_timer=0
+
+
+
+
+
+
+
+//~~CALL
+// Code to execute when receiving an incoming call
+
+
+
+
+
+
+
+//~~SMS
+// Code to execute when receiving an SMS
+
+
+
+
+
+
+
+//~~MOVEMENT
+// Code to execute when detecting movement.
+// The movement intensity is stored in ACC_DETECT, as well as ACC_X, AXX_Y and AXX_Z
+
+
+
+
+
+
+
+//~~USSD
+// Code to execute when receiving a reply from a USSD string.
+// Reply is stored in INCOMING_USSD$ string
+
+
+
+
+
+
+
+//~~GPRS
+// Code to execute when receiving GPRS data.
+// Data is stored in INCOMING_GPRS$ string

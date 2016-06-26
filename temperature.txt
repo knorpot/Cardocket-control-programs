@@ -1,0 +1,298 @@
+
+//~~STARTUP
+// Code to execute when unit starts up
+timer_interval =  5000
+
+sensor1_temp = 0
+sensor2_temp = 0
+first_time1=1
+first_time2=1
+timer_count = 0
+errorCount1 = 1
+errorCount2 = 1
+
+
+
+
+
+
+
+
+
+
+
+
+
+//~~TIMER
+// Code to execute every TIMER_INTERVAL milliseconds
+temp=0 //not calculated yet
+
+
+// **************************************** Send web updates  **********************************
+// do it here, as problems below will jump out of timer loop
+timer_count = timer_count+5 //every 5 seconds
+
+//update website every hour
+if (LAST_HOUR != RTC_HOUR && SECONDS_SINCE_STARTUP>30) then begin
+  webstr$=sensor1_temp + "," + sensor2_temp + "," + errorCount1 + "," + errorCount2
+  senddata(webstr$)
+  timer_count=0
+  LAST_HOUR = RTC_HOUR
+end
+
+ debug_str$ = "Searching for probes...";
+
+ROM1$ = OW_SEARCH_ROM(1)
+ROM2$ = OW_SEARCH_ROM(0)
+
+
+// **************************************** sensor 1  **********************************
+ debug_str$ = "Sensor 1";
+
+ if (OW_RESET() != 1) then begin
+   debug_str$ = "No reset received"; 
+   errorCount1++
+   errorCount2++
+  return
+end
+
+OW_WRITE(0x55)  // Match ROM command
+OW_WRITE(ROM1$) //write first device ROM code
+OW_WRITE(0x44)  // initiate temperature conversion
+IO3=2 //strong pullup
+
+wait(750); //strong pullup while waiting for conversion
+IO3=1 //normal pullup
+
+ if (OW_RESET() != 1) then begin
+ debug_str$ = "No reset received";
+  errorCount1++
+  return
+end
+
+OW_WRITE(0x55)  // Match ROM command
+OW_WRITE(ROM1$) //write first device ROM code
+OW_WRITE(0xbe)  // Read scratchpad
+
+//read all 9x data bytes
+temp_LSB        = OW_READ()
+temp_MSB       = OW_READ()
+Th                    = OW_READ()
+Tl                     = OW_READ()
+reserve1         = OW_READ()
+reserve2         = OW_READ()
+count_remain  = OW_READ()
+count_per_C   = OW_READ()
+device_crc     = OW_READ()
+
+//calculate CRC DOW from all received bytes
+my_crc = 0
+my_crc = CRCDOW(my_crc,temp_LSB)
+my_crc = CRCDOW(my_crc,temp_MSB)
+my_crc = CRCDOW(my_crc,Th)
+my_crc = CRCDOW(my_crc,Tl)
+my_crc = CRCDOW(my_crc,reserve1)
+my_crc = CRCDOW(my_crc,reserve2)
+my_crc = CRCDOW(my_crc,count_remain)
+my_crc = CRCDOW(my_crc,count_per_C)
+
+temp = temp_LSB+temp_MSB*256;
+
+if (my_crc=device_crc AND temp!=0xaa) then begin //0xaa = power on reset value, probably an error...
+ sub=(count_per_C-count_remain)/count_per_C
+ temp=(temp-0.25*sub)/2
+ last_temp=temp
+ if temp > 130 errorCount1++
+ else if first_time1=1 then
+{
+ sensor1_temp=temp
+  first_time1=0
+}
+ else 
+ {
+   sensor1_temp= (9*sensor1_temp+temp)/10
+   errorCount1=0
+ }
+ end
+else begin
+ debug_str$ = "Invalid CRC or POR temp"; 
+ errorCount1++
+end
+
+// **************************************** sensor 2  **********************************
+ debug_str$ = "Sensor 2";
+
+
+temp=0 //not calculated yet
+
+ if (OW_RESET() != 1) then begin
+debug_str$ = "No reset received";
+  errorCount2++
+  return
+end
+
+OW_WRITE(0x55)  // Match ROM command
+OW_WRITE(ROM2$) //write first device ROM code
+OW_WRITE(0x44)  // initiate temperature conversion
+IO3=2 //strong pullup
+
+wait(750); //strong pullup while waiting for conversion
+IO3=1 //normal pullup
+
+ if (OW_RESET() != 1) then begin
+ debug_str$ = "No reset received";
+  errorCount2++
+  return
+end
+
+OW_WRITE(0x55)  // Match ROM command
+OW_WRITE(ROM2$) //write first device ROM code
+OW_WRITE(0xbe)  // Read scratchpad
+
+//read all 9x data bytes
+temp_LSB        = OW_READ()
+temp_MSB       = OW_READ()
+Th                    = OW_READ()
+Tl                     = OW_READ()
+reserve1         = OW_READ()
+reserve2         = OW_READ()
+count_remain  = OW_READ()
+count_per_C   = OW_READ()
+device_crc     = OW_READ()
+
+//calculate CRC DOW from all received bytes
+my_crc = 0
+my_crc = CRCDOW(my_crc,temp_LSB)
+my_crc = CRCDOW(my_crc,temp_MSB)
+my_crc = CRCDOW(my_crc,Th)
+my_crc = CRCDOW(my_crc,Tl)
+my_crc = CRCDOW(my_crc,reserve1)
+my_crc = CRCDOW(my_crc,reserve2)
+my_crc = CRCDOW(my_crc,count_remain)
+my_crc = CRCDOW(my_crc,count_per_C)
+
+temp = temp_LSB+temp_MSB*256;
+
+if (my_crc=device_crc AND temp!=0xaa) then begin //0xaa = power on reset value, probably an error...
+ sub=(count_per_C-count_remain)/count_per_C
+ temp=(temp-0.25*sub)/2
+ last_temp=temp
+ if temp > 130 errorCount2++
+ else if first_time2=1 then
+{
+ sensor2_temp=temp
+  first_time2=0
+}
+ else 
+ {
+   sensor2_temp= (9*sensor2_temp+temp)/10
+   errorCount1=0
+ }
+ end
+else begin
+ debug_str$ = "Invalid CRC or POR temp"; 
+ errorCount2++
+end
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+//~~CALL
+// Code to execute when receiving an incoming call
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+//~~SMS
+// Code to execute when receiving an SMS
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+//~~MOVEMENT
+// Code to execute when detecting movement.
+// The movement intensity is stored in ACC_DETECT, as well as ACC_X, AXX_Y and AXX_Z
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+//~~USSD
+// Code to execute when receiving a reply from a USSD string.
+// Reply is stored in INCOMING_USSD$ string
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+//~~GPRS
+// Code to execute when receiving GPRS data.
+// Data is stored in INCOMING_GPRS$ string

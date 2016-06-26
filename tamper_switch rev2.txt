@@ -1,0 +1,51 @@
+
+//~~STARTUP
+// Code to execute when unit starts up
+TIMER_INTERVAL=500 //twice a second
+update=0;
+LAST_RTC_DAY = 100 //update on startup
+
+
+//~~TIMER
+IO1 = 1 //input
+IO2 = 1
+IO6 = 1 // set to 5V
+
+if (IO2 - LAST_IO2 > 2) update++
+else if (LAST_IO2  - IO2 > 2) update++
+else update=0;
+
+if (RTC_DAY != LAST_RTC_DAY) update = 10 //always update once a day
+
+if (update > 4)
+{
+  webstr$ = IO1+ "," + IO2 + "," + IO3 + "," + volt_supply;
+  senddata(webstr$)
+
+  LAST_RTC_DAY = RTC_DAY
+  LAST_IO2  =  IO2
+  updateCount++ //for debugging
+}
+
+
+//~~CALL
+// Code to execute when receiving an incoming call
+
+
+//~~SMS
+// Code to execute when receiving an SMS
+
+
+//~~MOVEMENT
+// Code to execute when detecting movement.
+// The movement intensity is stored in ACC_DETECT, as well as ACC_X, AXX_Y and AXX_Z
+
+
+//~~USSD
+// Code to execute when receiving a reply from a USSD string.
+// Reply is stored in INCOMING_USSD$ string
+
+
+//~~GPRS
+// Code to execute when receiving GPRS data.
+// Data is stored in INCOMING_GPRS$ string

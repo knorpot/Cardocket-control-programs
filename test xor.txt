@@ -1,0 +1,27 @@
+
+//~~STARTUP
+// Code to execute when unit starts
+io1=1
+io2=1
+io3=1
+LED=1
+//~~TIMER
+// Code to execute every TIMER_INTERVAL milliseconds
+// e.g. to execute code every 5 seconds, type: TIMER_INTERVAL=5000
+io1 = io1 ^ 1
+io2= io2 ^ 1
+io3 = io3 ^ 1
+LED = LED^1
+//~~CALL
+// Code to execute when receiving an incoming call
+//~~SMS
+// Code to execute when receiving an SMS
+//~~MOVEMENT
+// Code to execute when detecting movement.
+// The movement intensity is stored in ACC_DETECT, as well as ACC_X, AXX_Y and AXX_Z
+//~~USSD
+// Code to execute when receiving a reply from a USSD string.
+// Reply is stored in INCOMING_USSD$ string
+//~~GPRS
+// Code to execute when receiving GPRS data.
+// Data is stored in INCOMING_GPRS$ string
