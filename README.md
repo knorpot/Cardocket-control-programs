@@ -1,2 +1,4 @@
 # Cardocket-control-programs
-Control programs for Cardocket Tracking unit
+
+Various demo programs to use with Cardocket tracking unit. 
+See: www.cardocket.com for more details
